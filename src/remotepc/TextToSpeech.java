@@ -7,12 +7,12 @@ import com.sun.speech.freetts.audio.JavaStreamingAudioPlayer;
 public class TextToSpeech extends JavaStreamingAudioPlayer {
 
     // Default voice is Kevin16
-    private static final String VOICENAME = "kevin16";
-    private Voice voice;
-    VoiceManager voiceManager;
-    JavaStreamingAudioPlayer jcp;
+     private static final String VOICENAME = "kevin";
+    private static Voice voice;
+    static VoiceManager voiceManager;
+    static JavaStreamingAudioPlayer jcp;
     
-    public void speak(String Text) throws InstantiationException {
+    public static void speak(String Text) throws InstantiationException {
         
         // Taking instance of voice from VoiceManager factory.
         voiceManager = VoiceManager.getInstance();
@@ -27,21 +27,21 @@ public class TextToSpeech extends JavaStreamingAudioPlayer {
         voice.speak(Text);     
     }
 
-    public void Pause() throws InterruptedException, InstantiationException {
+    public static void Pause() throws InterruptedException, InstantiationException {
         
         jcp.pause();
     }
 
-    public void Stop() {
+    public static void Stop() {
         jcp.cancel();
     }
 
-    public void Resume() {
+    public static void Resume() {
 
         jcp.resume();
     }
 
-    public void Restart(String str) {
+    public static void Restart(String str) {
         voice.speak(str);
     }
 

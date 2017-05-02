@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class RemoveStopWords {
 
-    private static final String FILENAME = "C:\\Users\\Garvit Patel\\Documents\\My_AI\\src\\my_ai\\english";
+    private static final String FILENAME = "C:\\Users\\Garvit Patel\\Documents\\NetBeansProjects\\RemotePc\\src\\remotepc\\english";
 
     public String removeStopWords(String input) throws Exception {
         input=input.toLowerCase();
@@ -25,7 +25,7 @@ public class RemoveStopWords {
         BufferedReader br = null;
         FileReader fr = null;
         List<String> stopWords = new ArrayList<>();
-        List<String> inputWithoutStopWords = new ArrayList<>();
+        ArrayList<String> inputWithoutStopWords = new ArrayList<>();
         
         try {
 

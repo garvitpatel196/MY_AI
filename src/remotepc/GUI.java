@@ -7,6 +7,7 @@ package remotepc;
 
 import com.onbarcode.barcode.IBarcode;
 import com.onbarcode.barcode.QRCode;
+import java.awt.AWTException;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -15,6 +16,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.script.ScriptException;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
@@ -37,7 +39,7 @@ public class GUI extends javax.swing.JFrame {
     static String newip;
     static String Command;
     static boolean Tmode = false;
-
+    
     public GUI() {
         initComponents();
     }
@@ -61,7 +63,7 @@ public class GUI extends javax.swing.JFrame {
         jCommand = new javax.swing.JPanel();
         jLabel6 = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        jCommandResult = new javax.swing.JTextArea();
         jConnectivityStatus = new javax.swing.JTextField("No Device Connected");
         jIp = new javax.swing.JTextField();
         jPanel1 = new javax.swing.JPanel();
@@ -116,9 +118,10 @@ public class GUI extends javax.swing.JFrame {
         jLabel6.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jLabel6.setText("Command-Result");
 
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jScrollPane2.setViewportView(jTextArea1);
+        jCommandResult.setEditable(false);
+        jCommandResult.setColumns(20);
+        jCommandResult.setRows(5);
+        jScrollPane2.setViewportView(jCommandResult);
 
         javax.swing.GroupLayout jCommandLayout = new javax.swing.GroupLayout(jCommand);
         jCommand.setLayout(jCommandLayout);
@@ -226,6 +229,7 @@ public class GUI extends javax.swing.JFrame {
 
         jPanel4.setBackground(new java.awt.Color(255, 255, 255));
 
+        jSearchResult.setEditable(false);
         jSearchResult.setColumns(20);
         jSearchResult.setRows(5);
         jScrollPane1.setViewportView(jSearchResult);
@@ -379,304 +383,397 @@ public class GUI extends javax.swing.JFrame {
         barcode.setBottomMargin(10f);
         barcode.setResolution(72);
         icon = new ImageIcon(barcode.drawBarcode());
-
+        
         java.awt.EventQueue.invokeLater(() -> {
             new GUI().setVisible(true);
             GUI.jIp.setText(newip);
             GUI.jConnectivityStatus.setText("No Device Connected");
         });
     }
-
+    
     public static void main(String[] args) {
         try {
-
+            
             ServerSocket serverSocket = new ServerSocket(8080);
             String hostName = InetAddress.getLocalHost().getHostName();
             IP = Inet4Address.getAllByName(hostName);
-            System.out.println("My wifi Ip:" + IP[2]);
-            startServer(IP[2].toString());
-
+            System.out.println("My wifi Ip:" + IP[0]);
+            startServer(IP[0].toString());
             Thread t1;
             t1 = new Thread() {
                 @Override
                 public void run() {
-
                     while (true) {
                         try {
                             Socket socket = serverSocket.accept();
                             DataInputStream dis = new DataInputStream(socket.getInputStream());
                             String str = dis.readLine();
+                            //System.out.println(str);
                             String mes[] = str.split("/");
-                            String fmes[] = mes[1].split(" ");
-                            fmes[0] = fmes[0].replace("%", "");
-                            fmes[0] = fmes[0].replace("2", "");
-                            fmes[0] = fmes[0].replace("0", " ");
-                            Command = fmes[0];
-
+                            Command = mes[1];
+                            Command = Command.replace(" HTTP", "");
                             Command = Command.toLowerCase();
-                            if (Command.equals("DEVICECONNECTED") && isConnected == false) {
+                            
+                            if (isConnected) {
+                                result = Command;
+
+                                //result = rsw.removeStopWords(Command);
+                                if (result.contains("keyboard") || result.contains("mouse")) {
+                                    result = result.replace("mouse-", "");
+                                    result = result.replace("keyboard-", "");
+                                    System.out.println("result:" + result);
+                                    KeyboardMouse.mouse(result);
+                                } else if (result.contains("typing") && result.contains("on")) {
+                                    Tmode = true;
+                                } else if (result.contains("typing") && result.contains("off")) {
+                                    Tmode = false;
+                                } else {
+                                    GUI.jCommandResult.setText(result);
+                                    Thread t2;
+                                    t2 = new Thread() {
+                                        @Override
+                                        public void run() {
+                                            
+                                            result = result.replace("//" + "/[.,/'/#!$%^&*;:{}=_`~()]/g", "");
+                                            //result = NLP.extractMeaning(result);
+                                            if (Tmode) {
+                                                try {
+                                                    Functionality.type(result);
+                                                } catch (AWTException ex) {
+                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                }
+                                            } else if (Tmode) {
+                                                
+                                            } else {
+                                                switch (result) {
+                                                    case "open c drive": {
+                                                        try {
+                                                            Functionality.openCDrive();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open d drive": {
+                                                        try {
+                                                            Functionality.openDDrive();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open e drive": {
+                                                        try {
+                                                            Functionality.openEDrive();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open f drive": {
+                                                        try {
+                                                            Functionality.openFDrive();
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "open g drive": {
+                                                        try {
+                                                            Functionality.openGDrive();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open h drive": {
+                                                        try {
+                                                            Functionality.openHDrive();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open i drive": {
+                                                        try {
+                                                            Functionality.openIDrive();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open j drive": {
+                                                        try {
+                                                            Functionality.openJDrive();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open k drive": {
+                                                        try {
+                                                            Functionality.openKDrive();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "close": {
+                                                        try {
+                                                            Functionality.close();
+                                                            break;
+                                                        } catch (AWTException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "battery status": {
+                                                        Functionality.batteryStatus();
+                                                        break;
+                                                    }
+                                                    case "open browser": {
+                                                        try {
+                                                            Functionality.openBrowser();
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "cricket score": {
+                                                        Functionality.cricketScore();
+                                                        break;
+                                                    }
+                                                    case "open cmd": {
+                                                        try {
+                                                            Functionality.openCmd();
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "open notepad": {
+                                                        try {
+                                                            Functionality.openNotepad();
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "open controlpannel": {
+                                                        try {
+                                                            Functionality.openControlPannel();
+                                                        } catch (IOException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "open facebook": {
+                                                        try {
+                                                            Functionality.openFacebook();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open instagram": {
+                                                        try {
+                                                            Functionality.openInstagram();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open gmail": {
+                                                        try {
+                                                            Functionality.openGmail();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open linkedin": {
+                                                        try {
+                                                            Functionality.openLinkedIn();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "hotspot on": {
+                                                        try {
+                                                            Functionality.hotspotOn();
+                                                        } catch (IOException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "hostspot off": {
+                                                        try {
+                                                            Functionality.hotspotOff();
+                                                            break;
+                                                        } catch (IOException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open ppt": {
+                                                        try {
+                                                            Functionality.openPowerPoint();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open word": {
+                                                        try {
+                                                            Functionality.openWord();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "hibernet": {
+                                                        try {
+                                                            Functionality.hibernet();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "sleep": {
+                                                        try {
+                                                            Functionality.openInstagram();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "shutdown": {
+                                                        try {
+                                                            Functionality.shutDown();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "lock screen": {
+                                                        try {
+                                                            Functionality.lockScreen();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "open wifisetttings": {
+                                                        try {
+                                                            Functionality.openWifiSettings();
+                                                            break;
+                                                        } catch (IOException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "personalize": {
+                                                        try {
+                                                            Functionality.personalize();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "weather": {
+                                                        try {
+                                                            Functionality.weather();
+                                                        } catch (IOException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        } catch (ScriptException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "play music": {
+                                                        try {
+                                                            Functionality.playMusic();
+                                                        } catch (InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "open videos": {
+                                                        Functionality.playVideos();
+                                                        break;
+                                                    }
+                                                    case "pause": {
+                                                        Functionality.pause();
+                                                        break;
+                                                    }
+                                                    case "play": {
+                                                        Functionality.play();
+                                                        break;
+                                                    }
+                                                    case "snapshot": {
+                                                        try {
+                                                            Functionality.takeSnapshot();
+                                                        } catch (AWTException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "time": {
+                                                        try {
+                                                            Functionality.time();
+                                                            break;
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "recent news": {
+                                                        try {
+                                                            Functionality.recentNews();
+                                                        } catch (IOException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    case "next": {
+                                                        Functionality.next();
+                                                        break;
+                                                    }
+                                                    case "previous": {
+                                                        Functionality.previous();
+                                                        break;
+                                                    }
+                                                    case "take note": {
+                                                        try {
+                                                            Functionality.takeNote();
+                                                            break;
+                                                        } catch (IOException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    case "remainder": {
+                                                        try {
+                                                            Functionality.remainder(result);
+                                                        } catch (IOException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                        break;
+                                                    }
+                                                    default: {
+                                                        try {
+                                                            Functionality.search(result);
+                                                        } catch (IOException | InstantiationException ex) {
+                                                            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    };
+                                    t2.start();
+                                }
+                            }
+                            if (Command.equals("deviceconnected") && isConnected == false) {
                                 isConnected = true;
                                 GUI.jConnectivityStatus.setText("Connected");
-                            }
-                            if (isConnected) {
-                                result = rsw.removeStopWords(Command);
-                                Thread t2;
-                                t2 = new Thread(result) {
-                                    @Override
-                                    public void run() {
-                                        if (result.contains("mouse")) {
-
-                                        } else if (result.contains("keyboard")) {
-
-                                        } else if (result.contains("typing") && result.contains("on")) {
-                                            Tmode = true;
-                                        } else if (result.contains("typing") && result.contains("off")) {
-                                            Tmode = false;
-                                        }
-                                        result = result.replace("//" + "/[.,/'/#!$%^&*;:{}=-_`~()]/g", "");
-                                        result = NLP.extractMeaning(result);
-                                        switch (result) {
-                                            case "open c drive": {
-                                                Functionality.openCDrive();
-                                                break;
-                                            }
-                                            case "open d drive": {
-                                                Functionality.openDDrive();
-                                                break;
-                                            }
-                                            case "open e drive": {
-                                                Functionality.openEDrive();
-                                                break;
-                                            }
-                                            case "open f drive": {
-                                                Functionality.openFDrive();
-                                                break;
-                                            }
-                                            case "open g drive": {
-                                                Functionality.openGDrive();
-                                                break;
-                                            }
-                                            case "open h drive": {
-                                                Functionality.openHDrive();
-                                                break;
-                                            }
-                                            case "open i drive": {
-                                                Functionality.openIDrive();
-                                                break;
-                                            }
-                                            case "open j drive": {
-                                                Functionality.openJDrive();
-                                                break;
-                                            }
-                                            case "open k drive": {
-                                                Functionality.openKDrive();
-                                                break;
-                                            }
-                                            case "close": {
-                                                Functionality.close();
-                                                break;
-                                            }
-                                            case "battery status": {
-                                                Functionality.batteryStatus();
-                                                break;
-                                            }
-                                            case "open browser": {
-                                                try {
-                                                    Functionality.openBrowser();
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                                break;
-                                            }
-                                            case "cricket score": {
-                                                Functionality.cricketScore();
-                                                break;
-                                            }
-                                            case "open cmd": {
-                                                try {
-                                                    Functionality.openCmd();
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                                break;
-                                            }
-                                            case "open notepad": {
-                                                try {
-                                                    Functionality.openNotepad();
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                                break;
-                                            }
-                                            case "open controlpannel": {
-                                                try {
-                                                    Functionality.openControlPannel();
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                                break;
-                                            }
-                                            case "open facebook": {
-                                                try {
-                                                    Functionality.openFacebook();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "open instagram": {
-                                                try {
-                                                    Functionality.openInstagram();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "open gmail": {
-                                                try {
-                                                    Functionality.openGmail();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "open linkedin": {
-                                                try {
-                                                    Functionality.openLinkedIn();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "hotspot on": {
-                                                Functionality.hotspotOn();
-                                                break;
-                                            }
-                                            case "hostspot off": {
-                                                Functionality.hotspotOff();
-                                                break;
-                                            }
-                                            case "open ppt": {
-                                                Functionality.openPowerPoint();
-                                                break;
-                                            }
-                                            case "open word": {
-                                                Functionality.openWord();
-                                                break;
-                                            }
-                                            case "hibernet": {
-                                                Functionality.hibernet();
-                                                break;
-                                            }
-                                            case "sleep": {
-                                                try {
-                                                    Functionality.openInstagram();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "shutdown": {
-                                                try {
-                                                    Functionality.shutDown();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "lock screen": {
-                                                try {
-                                                    Functionality.lockScreen();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "open wifisetttings": {
-                                                try {
-                                                    Functionality.openWifiSettings();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "page up": {
-                                                Functionality.pageDown();
-                                                break;
-                                            }
-                                            case "page down": {
-                                                try {
-                                                    Functionality.openInstagram();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "personalize": {
-                                                try {
-                                                    Functionality.personalize();
-                                                    break;
-                                                } catch (IOException ex) {
-                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-                                                }
-                                            }
-                                            case "weather": {
-                                                Functionality.weather();
-                                                break;
-                                            }
-                                            case "play music": {
-                                                Functionality.playMusic();
-                                                break;
-                                            }
-                                            case "open videos": {
-                                                Functionality.playVideos();
-                                                break;
-                                            }
-                                            case "pause": {
-                                                Functionality.pause();
-                                                break;
-                                            }
-                                            case "play": {
-                                                Functionality.play();
-                                                break;
-                                            }
-                                            case "snapshot": {
-                                                Functionality.takeSnapshot();
-                                                break;
-                                            }
-                                            case "time": {
-                                                Functionality.time();
-                                                break;
-                                            }
-                                            case "camera": {
-                                                Functionality.webCamera();
-                                                break;
-                                            }
-                                            case "recent news": {
-                                                Functionality.recentNews();
-                                                break;
-                                            }
-                                            case "next": {
-                                                Functionality.next();
-                                                break;
-                                            }
-                                            case "previous": {
-                                                Functionality.previous();
-                                                break;
-                                            }
-                                            case "take note": {
-                                                Functionality.takeNote();
-                                                break;
-                                            }
-                                            case "remainder": {
-                                                Functionality.remainder();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                };
-                                t2.start();
-                            } else {
+                                
                             }
                         } catch (Exception ex) {
                             System.out.println(ex);
@@ -696,6 +793,7 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JPanel jCommand;
+    private static javax.swing.JTextArea jCommandResult;
     private static javax.swing.JTextField jConnectivityStatus;
     private javax.swing.JPanel jFrameMenu;
     private static javax.swing.JTextField jIp;
@@ -712,9 +810,8 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel5;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JTextArea jSearchResult;
+    public static javax.swing.JTextArea jSearchResult;
     private javax.swing.JPanel jStatus;
-    private javax.swing.JTextArea jTextArea1;
     private javax.swing.JPanel jbarcode;
     // End of variables declaration//GEN-END:variables
 }
