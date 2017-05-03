@@ -18,7 +18,7 @@ import java.util.TreeMap;
  *
  * @author Garvit Patel
  */
-public class test {
+public class ExtractMeaning {
 
     private static TreeMap m1;
  

@@ -117,7 +117,6 @@ public class Keyboard {
 
     public static void read() throws AWTException, UnsupportedFlavorException, IOException, InstantiationException {
         Robot robot = new Robot();
-
         robot.keyPress(KeyEvent.VK_HOME);
         robot.keyRelease(KeyEvent.VK_HOME);
         robot.keyPress(KeyEvent.VK_CONTROL);

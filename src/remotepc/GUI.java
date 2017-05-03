@@ -31,7 +31,6 @@ public class GUI extends javax.swing.JFrame {
      */
     static Functionality function;
     static String result;
-    static RemoveStopWords rsw;
     static ImageIcon icon;
     static InetAddress[] IP;
     static JFrame f = new JFrame("Connecting...");
@@ -417,8 +416,8 @@ public class GUI extends javax.swing.JFrame {
                             if (isConnected) {
                                 result = Command;
 
-                                //result = rsw.removeStopWords(Command);
-                                if (result.contains("keyboard") || result.contains("mouse")) {
+                                
+                                if (result.contains("keyboard") || result.contains("mouse")) { 
                                     result = result.replace("mouse-", "");
                                     result = result.replace("keyboard-", "");
                                     System.out.println("result:" + result);
@@ -428,6 +427,7 @@ public class GUI extends javax.swing.JFrame {
                                 } else if (result.contains("typing") && result.contains("off")) {
                                     Tmode = false;
                                 } else {
+                                    result = ExtractMeaning.extractMeaning(result);
                                     GUI.jCommandResult.setText(result);
                                     Thread t2;
                                     t2 = new Thread() {
